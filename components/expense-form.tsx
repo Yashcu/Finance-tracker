@@ -1,193 +1,151 @@
 "use client"
 
-import type React from "react"
+import { useState } from 'react';
 
-import { useState, useEffect } from "react"
-import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react"
-import { format } from "date-fns"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { cn } from "@/lib/utils"
-import type { Expense } from "./expense-tracker"
-
-interface ExpenseFormProps {
-  onSubmit: (expense: Expense) => void
-  expense: Expense | null
-  categories: string[]
-  onCancel: () => void
+interface ExpenseFormData {
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
 }
 
-export function ExpenseForm({ onSubmit, expense, categories, onCancel }: ExpenseFormProps) {
-  const [description, setDescription] = useState("")
-  const [amount, setAmount] = useState("")
-  const [category, setCategory] = useState("")
-  const [date, setDate] = useState<Date>(new Date())
-  const [newCategory, setNewCategory] = useState("")
-  const [openCalendar, setOpenCalendar] = useState(false)
-  const [openCategory, setOpenCategory] = useState(false)
+interface ExpenseFormProps {
+  onSubmit: (data: ExpenseFormData) => Promise<void>;
+  onCancel: () => void;
+  initialData?: ExpenseFormData;
+}
 
-  useEffect(() => {
-    if (expense) {
-      setDescription(expense.description)
-      setAmount(expense.amount.toString())
-      setCategory(expense.category)
-      setDate(expense.date)
+export default function ExpenseForm({ onSubmit, onCancel, initialData }: ExpenseFormProps) {
+  const [formData, setFormData] = useState<ExpenseFormData>(
+    initialData || {
+      amount: 0,
+      category: 'Food',
+      description: '',
+      date: new Date().toISOString().split('T')[0]
     }
-  }, [expense])
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'amount' ? parseFloat(value) || 0 : value,
+    }));
+  };
 
-    const expenseData: Expense = {
-      id: expense?.id || "",
-      description,
-      amount: Number.parseFloat(amount),
-      category: category || newCategory,
-      date,
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await onSubmit(formData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit expense');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onSubmit(expenseData)
-
-    if (!expense) {
-      setDescription("")
-      setAmount("")
-      setCategory("")
-      setNewCategory("")
-      setDate(new Date())
-    }
-  }
-
-  const allCategories = [...categories]
-  if (newCategory && !categories.includes(newCategory)) {
-    allCategories.push(newCategory)
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg">
-      <h2 className="text-xl font-semibold mb-4">{expense ? "Edit Expense" : "Add New Expense"}</h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">{error}</h3>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Input
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="What did you spend on?"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
-        <Input
-          id="amount"
+      <div>
+        <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+          Amount
+        </label>
+        <input
           type="number"
+          id="amount"
+          name="amount"
+          value={formData.amount}
+          onChange={handleChange}
           step="0.01"
-          min="0"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0.00"
           required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="category">Category</Label>
-        <Popover open={openCategory} onOpenChange={setOpenCategory}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" role="combobox" aria-expanded={openCategory} className="w-full justify-between">
-              {category ? category : "Select category..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Search category..." />
-              <CommandList>
-                <CommandEmpty>
-                  <div className="p-2">
-                    <p className="text-sm">No category found.</p>
-                    <div className="mt-2 flex items-center space-x-2">
-                      <Input
-                        value={newCategory}
-                        onChange={(e) => setNewCategory(e.target.value)}
-                        placeholder="Add new category"
-                        className="h-8"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => {
-                          if (newCategory) {
-                            setCategory(newCategory)
-                            setOpenCategory(false)
-                          }
-                        }}
-                      >
-                        Add
-                      </Button>
-                    </div>
-                  </div>
-                </CommandEmpty>
-                <CommandGroup>
-                  {allCategories.map((cat) => (
-                    <CommandItem
-                      key={cat}
-                      value={cat}
-                      onSelect={() => {
-                        setCategory(cat)
-                        setOpenCategory(false)
-                      }}
-                    >
-                      <Check className={cn("mr-2 h-4 w-4", category === cat ? "opacity-100" : "opacity-0")} />
-                      {cat}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+      <div>
+        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+          Category
+        </label>
+        <select
+          id="category"
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        >
+          <option value="Food">Food</option>
+          <option value="Transportation">Transportation</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Utilities">Utilities</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="date">Date</Label>
-        <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
-          <PopoverTrigger asChild>
-            <Button id="date" variant={"outline"} className="w-full justify-start text-left font-normal">
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "PPP") : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(date) => {
-                if (date) {
-                  setDate(date)
-                  setOpenCalendar(false)
-                }
-              }}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          Description
+        </label>
+        <input
+          type="text"
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        />
       </div>
 
-      <div className="flex justify-end space-x-2 pt-4">
-        {expense && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        )}
-        <Button type="submit">{expense ? "Update" : "Add"} Expense</Button>
+      <div>
+        <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+          Date
+        </label>
+        <input
+          type="date"
+          id="date"
+          name="date"
+          value={formData.date}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        />
+      </div>
+
+      <div className="flex space-x-4">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+        >
+          {isSubmitting ? 'Saving...' : 'Save Expense'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+        >
+          Cancel
+        </button>
       </div>
     </form>
-  )
+  );
 }
 

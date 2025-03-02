@@ -23,6 +23,8 @@ model User {
   expenses           Expense[]
   resetOTP           String?
   resetOTPExpires    DateTime?
+
+  @@index([email])
 }
 
 model Expense {
@@ -37,4 +39,7 @@ model Expense {
   user        User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([date])
+  @@index([category])
+  @@index([userId, date]) // Composite index for common query pattern
 }

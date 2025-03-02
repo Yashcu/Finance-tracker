@@ -1,103 +1,127 @@
-# Finance Tracker
+# Expense Tracker Application
 
-A comprehensive personal finance and expense tracking application built with Next.js, TypeScript, Tailwind CSS, Prisma, and PostgreSQL.
+A modern, optimized expense tracking application built with Next.js, Prisma, and NextAuth.js.
 
-## Features Implemented
+## Features
 
-### User Authentication
-- ✅ User registration and login
-- ✅ Secure password hashing with bcrypt
-- ✅ Session management using NextAuth.js
-- ✅ OTP-based password reset functionality
-- ✅ User profile management
+- **User Authentication**: Secure login, signup, and password management with NextAuth.js
+- **Expense Management**: Add, view, filter, and paginate expenses
+- **Dashboard**: Visual representation of expense data
+- **Security**: Secure password reset flow and protection against common attacks
+- **Optimized Performance**: Fast page loads and optimized API calls
+- **Mobile Responsive**: Works well on all device sizes
 
-### Expense Management
-- ✅ Create, read, update, and delete expenses
-- ✅ Categorization of expenses
-- ✅ Date-based filtering and searching
-- ✅ Expense summary and visualization
+## Performance Optimizations
 
-### User Interface
-- ✅ Responsive design with Tailwind CSS
-- ✅ Dashboard with expense summaries
-- ✅ Navigation with active link highlighting
-- ✅ Form validation and error handling
-- ✅ User settings page
+This application has been highly optimized for performance:
 
-## Setup Instructions
+### Authentication Optimizations
+
+- **In-memory Caching**: Successful logins are cached to reduce database queries
+- **Selective Database Queries**: Only necessary fields are queried from the database
+- **JWT Optimization**: Configured for optimal token expiration 
+- **Remember Me Feature**: Extended session duration for user convenience
+- **Debug Mode**: Only enabled in development environments
+- **Connection Pooling**: Optimized database connection management
+
+### Database Optimizations
+
+- **Indexes**: Added strategic indexes to the Prisma schema:
+  - Index on the `email` field in the User model
+  - Indexes on `userId`, `date`, and `category` fields in the Expense model
+  - Composite index on `userId` and `date` for frequently used queries
+- **Query Optimization**: Limit fields selected in queries
+
+### API Performance
+
+- **API Caching**: Implemented a TTL-based caching system for API responses
+- **Pagination**: Optimized expense retrieval with pagination
+- **Dynamic Filtering**: Efficient filtering on the backend
+- **Query Parameters**: Support for sorting, limiting, and filtering data
+
+### Frontend Optimizations
+
+- **Code Splitting**: Lazy loading of expensive components
+- **Font Optimization**: Using Next.js font optimization to avoid CORS issues
+- **Component Optimization**: Memoized calculations and optimized renders
+- **Loading States**: Enhanced UX with skeleton loading patterns
+- **Edge Analytics**: Performance monitoring for critical user paths
+
+### Developer Experience
+
+- **Performance Metrics**: Built-in tracking of page loads, API calls, and render times
+- **Error Logging**: Comprehensive error tracking
+- **Development Helpers**: Better console logging for development
+
+## Forgot Password Flow
+
+The application includes a complete password reset flow:
+
+1. User requests password reset on the login page
+2. User receives an email with a secure reset link
+3. User creates a new password using the secure token
+4. System validates token and updates password securely
+
+## Getting Started
 
 ### Prerequisites
-- Node.js (v14 or later)
-- PostgreSQL database
-- npm or yarn
 
-### Installation Steps
+- Node.js 16.8 or later
+- PostgreSQL or another database supported by Prisma
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Yashcu/Finance-tracker.git
-   cd Finance-tracker
-   ```
+### Installation
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/expense-tracker.git
+```
 
-3. **Create a .env file in the root directory with the following variables**
-   ```
-   DATABASE_URL="postgresql://username:password@localhost:5432/expense_tracker"
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-secret-key"
-   ```
+2. Install dependencies
+```bash
+npm install
+```
 
-4. **Set up the database**
-   ```bash
-   npx prisma db push
-   ```
+3. Set up environment variables
+Create a `.env` file in the project root with:
+```
+DATABASE_URL="postgresql://username:password@localhost:5432/expense_tracker"
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="http://localhost:3000"
+```
 
-5. **Start the development server**
-   ```bash
-   npm run dev
-   ```
+4. Push the database schema
+```bash
+npx prisma db push
+```
 
-6. **Access the application**
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+5. Run the development server
+```bash
+npm run dev
+```
 
-## Work Left To Do
+## Performance Measurement
 
-### Enhanced Analytics
-- [ ] Monthly spending comparison charts
-- [ ] Budget tracking and alerts
-- [ ] Expense forecasting based on historical data
-- [ ] Category-based spending breakdown
+The application includes built-in performance measurement tools:
 
-### Additional Features
-- [ ] Multiple currency support
-- [ ] Recurring expenses automation
-- [ ] Export expenses to CSV/PDF
-- [ ] Dark mode support
-- [ ] Mobile app integration
+- **Page Load Tracking**: Monitors how quickly pages render
+- **API Response Times**: Tracks the speed of API requests
+- **Component Render Time**: Identifies slow-rendering components
+- **Web Vitals**: Monitors Core Web Vitals metrics
+- **Error Tracking**: Captures and logs errors
 
-### Technical Improvements
-- [ ] Comprehensive test coverage
-- [ ] Performance optimization
-- [ ] Implementing proper email service for password reset
-- [ ] Enhancing security features
-- [ ] Implementing rate limiting for API endpoints
+## Troubleshooting
 
-## Technologies Used
+### Common Issues
 
-- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API routes, Prisma ORM
-- **Database**: PostgreSQL
-- **Authentication**: NextAuth.js, bcrypt
-- **Styling**: Tailwind CSS, Heroicons
+- **Database Connection Issues**: Ensure your database is running and credentials are correct
+- **Prisma Client Issues**: Run `npx prisma generate` if you encounter Prisma client errors
+- **NextAuth Configuration**: Check that NEXTAUTH_SECRET and NEXTAUTH_URL are correctly set
 
-## License
+### Performance Debugging
 
-MIT
+If experiencing slow performance:
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. 
+1. Check the performance metrics in the developer console
+2. Identify slow API calls using the Network tab
+3. Review component render times in React DevTools
+4. Ensure database indexes are properly applied 

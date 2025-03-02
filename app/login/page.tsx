@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,17 +9,49 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Check for cached credentials
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("expense_tracker_email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // Debounced validation to prevent unnecessary work during typing
+  const validateInputs = useCallback(() => {
+    if (email && password) {
+      return true;
+    }
+    return false;
+  }, [email, password]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    
+    if (!validateInputs()) {
+      setError("Please enter both email and password");
+      return;
+    }
+    
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
     try {
+      // Remember email if requested
+      if (rememberMe) {
+        localStorage.setItem("expense_tracker_email", email);
+      } else {
+        localStorage.removeItem("expense_tracker_email");
+      }
+
+      // Pre-warm the dashboard route
+      router.prefetch("/dashboard");
+      
       const result = await signIn("credentials", {
         email,
         password,
@@ -31,8 +63,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      // Immediately redirect
+      window.location.href = "/dashboard";
     } catch (error) {
       setError("An error occurred. Please try again.");
     } finally {
@@ -58,9 +90,12 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="relative block w-full rounded-md border-0 p-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600"
                 placeholder="Email address"
+                autoComplete="email"
               />
             </div>
             <div>
@@ -71,9 +106,12 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="relative block w-full rounded-md border-0 p-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600"
                 placeholder="Password"
+                autoComplete="current-password"
               />
             </div>
           </div>
@@ -83,6 +121,19 @@ export default function LoginPage() {
           )}
 
           <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                Remember me
+              </label>
+            </div>
             <div className="text-sm">
               <Link 
                 href="/forgot-password" 
@@ -96,7 +147,7 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !validateInputs()}
               className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-400"
             >
               {isLoading ? "Signing in..." : "Sign in"}
